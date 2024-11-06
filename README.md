@@ -1,8 +1,8 @@
 # Direction
 
 
-+ [Part 2](part2_part3)
-+ [Part 3](part2_part3)
++ [Part 2](part2_part3.md)
++ [Part 3](part2_part3.md)
 + [Part 4]()
     + [entropy.py](part4_entropy.py)
     + [kmer.py](part4_kmer.py)
