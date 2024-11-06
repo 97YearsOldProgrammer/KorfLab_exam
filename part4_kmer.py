@@ -1,29 +1,30 @@
 import argparse
 import itertools
 import gzip
-
-
-# program set up
+import tool
 
 parser = argparse.ArgumentParser(description='K-mer Locations.')
 parser.add_argument('file', type=str, help='name of fasta file')
 parser.add_argument('-k' ,'--kvalue', type=int, default=3,
-	help='kvalue [%(default)i]')
+    help='kvalue [%(default)i]')
 arg = parser.parse_args()
 seqs = []
+
+# i am not using the one from Dr.Korf here
+# since we don't actually go this over on large fasta or multi fasta file
+# that would rearrange my rest of code
+# this is how kmer program would work on single fasta file with low k value
 
 # extracting sequence from fasta file
 
 with gzip.open(arg.file, 'rt') as fp:
 
-	while True:
-		
-		line = fp.readline()
-		if line == '': break
-		line = line.rstrip()
-		if line.startswith('>'): continue
-		seqs.append(line)
-
+    while True:
+        line = fp.readline()
+        if line == '': break
+        line = line.rstrip()
+        if line.startswith('>'): continue
+        seqs.append(line)
 
 seq = ''.join(seqs)
 
@@ -95,4 +96,3 @@ print(f'reverse sequence\t')
 
 for k, v in d_reverse.items():
 	print(f"{k} {' '.join(v)}")
-

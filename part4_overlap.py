@@ -81,6 +81,3 @@ for i in vcf['I']: 							# plan on doing it seperately, start with catagory 'I'
 
 			if c >= 300:					# start time saver
 				loopkiller = True			# since it is impossible for a value to have 300 times same variant inside it
-		
-		
-		
