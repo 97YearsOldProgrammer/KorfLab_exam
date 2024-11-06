@@ -113,7 +113,7 @@ I create an environment specifically for blast-legacy so that every package woul
 blastall --help
 formatdb --help
 ```
-We are gonna using protein sequence of `NP_4146081.1`, here is how I extract that into a file so that I can work on this to search similar file using blastall.
+We are gonna using protein sequence of `NP_4146081.1`, here is how I extract that into a file so that I can work on this to search similar file using blastall. Here is what I get for [NP_4146081.1](NP_4146081.faa).
 
 ```python
 zless ~/Code/korflab_exam/E.coli/GCF_000005845.2_ASM584v2_protein.faa.gz 
