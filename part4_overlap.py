@@ -1,7 +1,7 @@
 import argparse
 import gzip
 
-# i don't quite understand the overlap problme
+# still not quite sure, since there is no bed file in E.coli
 # here is what i did for unit 9 comparing. C.elegan.gff and C.elegan.vcf
 # this is one part of it; not the everything between two file
 
