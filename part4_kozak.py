@@ -1,6 +1,7 @@
 import gzip
 import re
 import argparse
+import json
 
 parser = argparse.ArgumentParser(description='PWM for Kozak sequence.')
 parser.add_argument('file', type=str, help='name of fasta file')
@@ -90,10 +91,4 @@ for seq in kozakseq:
 
 # final output
 
-print(f'AC IMTSUOO1\nXX\nID ECKOZ\nXX\nDE not sure btw should be fine')
-print(f'PO\tA\tC\tG\tT')
-
-for i in range(14):
-	print(f'{i+1:<8}{frequency[i+1]['A']:<8}{frequency[i+1]['C']:<8}{frequency[i+1]['G']:<8}{frequency[i+1]['T']:<8}')
-
-print('XX')
+print(json.dumps(Json, indent=4))
