@@ -45,3 +45,22 @@ def seq_en(seq, x):
 	else:	   hg = 0
 	se = ha + ht + hc + hg
 	return se
+
+# this is how to create the reverse strand
+
+def revcomp(dna):
+	rc = []
+	for nt in dna[::-1]:
+		if 	 nt == 'A': rc.append('T')
+		elif nt == 'C': rc.append('G')
+		elif nt == 'G': rc.append('C')
+		elif nt == 'T': rc.append('A')
+		else:			rc.append('N')
+	return ''.join(rc)
+
+def revercomp(sequence):
+    
+    comp_dict = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C',
+                 'a': 't', 't': 'a', 'c': 'g', 'g': 'c'}
+    
+    return ''.join(comp_dict.get(nt, nt) for nt in sequence[::-1])

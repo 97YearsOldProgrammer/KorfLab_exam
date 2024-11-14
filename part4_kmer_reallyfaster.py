@@ -1,6 +1,7 @@
 import argparse
 import gzip
 import tool
+from datetime import datetime
 
 parser = argparse.ArgumentParser(description='K-mer Locations.')
 parser.add_argument('file', type=str, help='name of fasta file')
@@ -9,6 +10,9 @@ parser.add_argument('-k' ,'--kvalue', type=int, default=3,
 parser.add_argument('-r' ,'--reverse', action = 'store_true', 
     help='softmask for reverse kmer')
 arg = parser.parse_args()
+    
+# delete later, test time scale only
+start = datetime.now()
 
 seqs = []
 # extracting sequence from fasta file
@@ -23,12 +27,15 @@ with gzip.open(arg.file, 'rt') as fp:
 
 seq = ''.join(seqs)
 
-d_forward = dict()
+# optimize sliding window algorithmn
+
+kmer = seq[ : arg.kvalue ]
+d_forward = {kmer: [1]}
                     
 # output for forward strand
 for i in range(0, len(seq) - arg.kvalue +1 ):
                     
-    kmer = seq[ i: i+arg.kvalue ]
+    kmer = kmer[1:] + seq[i + arg.kvalue - 1]
     
     if kmer in d_forward:
         d_forward[kmer].append(i+1)
@@ -38,8 +45,9 @@ for i in range(0, len(seq) - arg.kvalue +1 ):
 # creating reverse strand
 if arg.reverse:
     rseqs = tool.revcomp(seq)
-    d_reverse = dict() 
     rseq = ''.join(rseqs)
+    rkmer = seq[ : arg.kvalue ]
+    d_reverse = {rkmer: [1]}
     
 
 # collecting kmers for both forward and reverse
@@ -47,7 +55,7 @@ if arg.reverse:
                     
     for i in range(0, len(rseq) - arg.kvalue +1 ):
                     
-        rkmer = rseq[ i: i+arg.kvalue ]
+        rkmer = rkmer[1:] + rseq[i + arg.kvalue - 1]
     
         if rkmer in d_reverse:
             d_reverse[rkmer].append(i+1)
@@ -70,3 +78,7 @@ if arg.reverse:
     for rkmer in d_reverse:
         positions = ' '.join( map(str, d_reverse[rkmer]) )
         print(f"{rkmer} {positions}")
+
+# delete later, test time scale only
+end = datetime.now()
+print(end - start)

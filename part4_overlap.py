@@ -1,83 +1,107 @@
 import argparse
 import gzip
 
-# still not quite sure, since there is no bed file in E.coli
-# here is what i did for unit 9 comparing. C.elegan.gff and C.elegan.vcf
-# this is one part of it; not the everything between two file
-
 parser = argparse.ArgumentParser(description='variant reporter')
-parser.add_argument('gff', type=str, help='GFF file')
-parser.add_argument('vcf', type=str, help='VCF file')
+parser.add_argument('gff', type=str, help='GFF file (gzip file)')
+parser.add_argument('vcf', type=str, help='VCF file (gzip file)')
 arg = parser.parse_args()
 
-# creating dictionary for storing data
+vcf = {}
+gff = {}
 
-vcf = {  	'I':	[],
-			'II': 	[],
-			'III':	[],
-			'IV':	[],
-			'V':	[],
-			'X':	[],		}
+# used for later arranging the events
+def key_sort(x):
+    return (x['position'], priority[ x['type'] ])
+
+# credit to dr.korf, this is so nice
+with gzip.open (arg.gff, 'rt') as fp:
+    for line in fp:
+        x = line.split()
+        chm = x[0]
+        typ = x[2]
+        beg = int( x[3] )
+        end = int( x[4] )
+        if chm not in gff: gff[chm] = []
+        gff[chm].append( (beg, end, typ) )
 
 # collecting location from vcf file
-
 with gzip.open(arg.vcf, 'rt') as fp:
-	for line in fp:
-		line = line.split()
-		if line == '': break
-		head = line[0]
-		location = line[1]
-		vcf[head].append(location)
+    for line in fp:
+        y = line.split()
+        chm = y[0]
+        location = int( y[1] )               # for later comparison
+        if chm not in vcf: vcf[chm] = []
+        vcf[chm].append(location)
 
-# collecting information from gff file
+# repeating over different chromosome
+for chm in gff:
+    
+    # skip those who are mistakenly input mtDNA
+    if chm not in vcf: continue
 
-index = []									# for the lower and upper bound
+    # sweeping line algorithm
+    events = []
 
-with gzip.open (arg.gff, 'rt') as fp:
+    # nested loop for all of the chromosome
 
-	gff = {}
-	variant = {}							# where we use number as key, value as variant type
-	a = -1
+    # create event for gcf file
+    for beg, end, typ in gff[chm]:
+    
+        events.append({
+            'position': beg,
+            'type': 'beg',
+            'trait': typ
+        })
+    
+        events.append({
+            'position': end,
+            'type': 'end',
+            'trait': typ
+        })
 
-	for line in fp:
-		line = line.split()	
-		a += 1
+    # create event for vcf file
+    for idx, point in enumerate(vcf[chm]):
+        events.append({
+            'position': point,
+            'type': 'point',
+            'index': idx
+        })
 
-		if line[0] == 'I' and line[0].endswith('I'): 
-			variant[a]= line[2]				# where we record different types of variant
-			bound = (line[3], line[4])
-			index.append(bound)
+    # priority of event
+    priority = {
+        'beg': 1,
+        'point': 2,
+        'end': 3
+        }
 
+    # using sort to put those event as a line with order
+    events.sort( key = key_sort )
 
-d = dict()
+    # creating set for output 
+    # idk set, tuition video suggest this
 
-for i in vcf['I']: 							# plan on doing it seperately, start with catagory 'I'
+    active = set()
+    point_trait = [set() for _ in vcf[chm] ]
 
-	if bool(d):
-		output = [k for k, v in d.items() if not v and k]
-		output = ','.join(output)
-		print(f'I\t{j}\t{output}')
+    # loop through the events
+    for event in events:
+    
+        if   event['type'] == 'beg': active.add( event['trait'] )
+        
+        elif event['type'] == 'end':
+        
+            if event['trait'] in active:
+                active.remove( event['trait'] )
+        
+        elif event['type'] == 'point':
+            idx = event['index']
+            point_trait[idx] = active.copy() 
 
-	i = int(i)								# convert string into integer for later comparison
-	j = i
-	n = -1									# indice for the variant output to dictionary D
-	c = 0
-	d = dict()								# a diciontary used for storing unique type of variant
-	loopkiller = False
-
-	
-	for lb, ub in index:
-		
-		lb = int(lb)
-		ub = int(ub)
-
-		n += 1
-		if loopkiller: 	break				# do output while also break
-		
-		if  lb <= i and i <= ub: 
-
-			c += 1							# count how many times has been within the range
-			d[variant[n]] = ''
-
-			if c >= 300:					# start time saver
-				loopkiller = True			# since it is impossible for a value to have 300 times same variant inside it
+    # format output
+    for idx, point in enumerate( vcf[chm] ):
+        traits = point_trait[idx]
+    
+        # skip those location without traits
+        if traits:
+            traits_output = ', '.join(traits)
+            print(f'{chm}\t{point}\t{traits_output}') 

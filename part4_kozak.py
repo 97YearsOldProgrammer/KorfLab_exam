@@ -2,62 +2,87 @@ import gzip
 import re
 import argparse
 import json
+import tool
 
 parser = argparse.ArgumentParser(description='PWM for Kozak sequence.')
-parser.add_argument('file', type=str, help='name of fasta file')
+parser.add_argument('file', type=str, help='name of genebank file')
 arg = parser.parse_args()
 
 # collecting CDS , trying to put into a 2dimensional matrix
 
-CDS = []											# this is where every genetic codon start
+CDS  = []                                           # this is where every genetic codon start
+rCDS = []                                           # complement start codon
+
 with gzip.open(arg.file, 'rt') as fp:
+    
+    condition = False
+    sequence = []
 
-	while True:
-		line = fp.readline()
-		if not line: break
-		line = line.strip()
+    while True:
+        
+        line = fp.readline()
+        if not line: break
+        line = line.strip()
+        
+        # this part is for collecting position of starting codon
+        if line.startswith('CDS'):
+            
+            # used for collecting complement
+            if 'complement' in line: 
+                
+                if 'join' in line:
+                    rseq = line.split('join(')[-1].split('..')[1].split(',')[0].replace(')', '').strip()                
+                else:
+                    rseq = line.split('(')[-1].split('..')[1].replace(')', '').strip()
+                
+                rCDS.append(rseq)
+                                
+            elif  line.endswith('K'): continue     # there is one protein sequence ends with K
+            
+            elif  'join' in line:
+                rseq = line.split('join(')[-1].split('..')[0].split(',')[0] 
+                rCDS.append(rseq)
+                
+            else:
+                seq = line[3:] 
+                i   = seq.index('.')   
+                seq = seq[3:i]       
+                seq = seq.lstrip()        		   # removing extra space bar before ouput
+                CDS.append(seq)
 
-		if line.startswith('CDS'):
-			if    line.endswith(')'): continue	   # there is complement strand
-			elif  line.endswith('K'): continue     # there is one protein sequence ends with K
-			else:
-				SEc = line[3:]                     # starting and ending codon
-				i   = SEc.index('.')   
-				stg = SEc[3:i]           
-				stg = stg.lstrip()        		   # removing extra space bar before ouput
-				CDS.append(stg)
+        # this is for collecting the DNA sequence        
+        if 'ORIGIN' in line:
+            condition = True  
+            continue  
 
-# trying to get bottom of gbff file and those genetic information
-# not sure where this can be done within previous opening
+        if condition:
+            regex = '[^atcg]' 
+            nline = re.sub(regex, '', line)
+            sequence.append(nline.strip())  
 
-with gzip.open(arg.file, "rt") as file:
-	condition = False
-	sequence = []
+    full_seq = ''.join(sequence)
 
-	for line in file:
+# my counting format is dumb, have to turn it into uppercase
+full_seq = full_seq.upper()
 
-		if 'ORIGIN' in line:
-			condition = True  
-			continue  
+kozakseq = []  # where the kozak sequence would be stored
+rkozakseq = [] # we extract first, and then do transcription to each sequence
 
-		if condition:
-			regex = '[^atcg]' 
-			nline = re.sub(regex, '', line)
-			sequence.append(nline.strip())  
+for start_codon in CDS:
+    
+    kozak_seq = full_seq[ int(start_codon)-11: int(start_codon)+3 ]
+    kozakseq.append(kozak_seq)
+    
+for start_codon in rCDS:
+    
+    kozak_seq = full_seq[ int(start_codon)-4 : int(start_codon)+10]
+    rkozakseq.append(kozak_seq)
 
-	fullSeq = ''.join(sequence)
+# transcription for reverse strand
 
-# trying to extract the kozak sequence which is -6 atg +4 inttotal of 14
-# bc string start with 0 
-# t would be the place inside the stg of CDS
-# range would be stg-7 until stg+6
-
-kozakseq = [] # where the kozak sequence would be stored
-
-for stg in CDS:
-	kozak_seq = (fullSeq[int(stg)-7:int(stg)+7])
-	kozakseq.append(kozak_seq)
-
+for seq in rkozakseq:
+    seq = tool.revercomp(seq)
+    kozakseq.append(seq)
 
 # count how many times each letter exists
 # for existence of PWM
@@ -78,17 +103,9 @@ for i in range(14):
 # start counting
 
 for seq in kozakseq:
-	n = 0
-	for base in seq:
-
-		if   base == 'a': frequency[n+1]['A'] += 1
-		elif base == 'c': frequency[n+1]['C'] += 1
-		elif base == 'g': frequency[n+1]['G'] += 1
-		elif base == 't': frequency[n+1]['T'] += 1
-		else: break
-
-		n += 1
+    for n, base in enumerate(seq):
+        if base in 'ACGT':
+            frequency[n+1][base] += 1
 
 # final output
-
-print(json.dumps(Json, indent=4))
+print(json.dumps(frequency, indent=4))

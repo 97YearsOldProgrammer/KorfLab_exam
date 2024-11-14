@@ -7,9 +7,10 @@ import tool
 parser = argparse.ArgumentParser(description='DNA entropy filter.')
 parser.add_argument('file', type=str, help='name of fasta file')
 parser.add_argument('-s', '--size', type=int, default=11,
-	help='window size [%(default)i]')
+    help='window size [%(default)i]')
 parser.add_argument('-e', '--entropy', type=float, default=1.4,
-	help='entropy threshold [%(default).3f]')
+    help='entropy threshold [%(default).3f]')
+parser.add_argument('-n', '--lower', action ='store_true', help='softmask for lowercase output')
 arg = parser.parse_args()
 
 x = str(arg.entropy).split('.')
@@ -19,7 +20,6 @@ m = 0       # we used to track the location of the sliding window
 
 for defline, seq in tool.read_fasta(arg.file):
     
-    k = -1
     seqs = list(seq)
     
     for i in range( len(seqs) - arg.size +1 ):
@@ -27,8 +27,7 @@ for defline, seq in tool.read_fasta(arg.file):
         part = seq[ i: i+ arg.size ]
         en_f = tool.seq_en( part, arg.size )
         en 	 = int( round(en_f, ndigits=1 ) * 10 ) 
-        k	+= 1             # how we track the start point of sliding window         
-
+        
         if en < y:
 
             for j in range(arg.size): 
@@ -38,13 +37,18 @@ for defline, seq in tool.read_fasta(arg.file):
                     break
                     
                 m += 1
-                z  = k+m-1
-                if 	 seqs[z] == 'A': seqs[z] = 'a'
-                elif seqs[z] == 'C': seqs[z] = 'c'
-                elif seqs[z] == 'G': seqs[z] = 'g'
-                elif seqs[z] == 'T': seqs[z] = 't'
+                z  = i+m-1
+                
+                if arg.lower:
+                    if 	 seqs[z] == 'A': seqs[z] = 'a'
+                    elif seqs[z] == 'C': seqs[z] = 'c'
+                    elif seqs[z] == 'G': seqs[z] = 'g'
+                    elif seqs[z] == 'T': seqs[z] = 't'
+                    
+                if not arg.lower:
+                     seqs[z] = 'N'
                 
     seq = ''.join(seqs)
-    print(f'{defline}\t{seq}')
+    print(f'{defline}\n{seq}')
     
     

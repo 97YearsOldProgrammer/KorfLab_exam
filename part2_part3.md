@@ -44,6 +44,17 @@ Here is the sample compliment sequence:
 
 >CDS             complement(993277..994044)
 
+And there are actually **2214** complement strand in there by using code:
+
+```
+gunzip -c ../korflab_exam/E.coli/GCF_000005845.2_ASM584v2_genomic.gbff.gz | grep CDS | 
+grep complement | wc
+```
+
+So gbff file is actually composed by 2214 protein sequence in reverse strand and 2143 proteins sequence in forward strand. Yet we don't know which direction is the coding sequence is in *.faa file, btw it would be certain component of reverse and forward strand, since there is no other way to descibe such huge discrepency. 
+
+If we are good with this idea, then, there are still 59 more protein sequence in gbff file. I think the reasonable biological reason for this is in the *.gbff file, there are also non-functional mutated protein sequence included and also non-coded RNA such as tRNA, rRNA in there. 
+
 <br>
 
 __Q4: How many tRNA in the `*.gff` file__
@@ -130,7 +141,7 @@ blastall -p blastp -i ~/Code/korflab_exam/NP_4146081.faa -d ~/Code/korflab_exam/
 
 ### Output ###
 
-Output of the part 3 is stored inside the [output](~/Code/korflab_exam/output.txt) under this repository.  
+Output of the part 3 is stored inside the [output](~/Code/korflab_exam/output) under this repository.  
 Here is the cloest protein sequence for `NP_4146081.1`.
 
 ```
