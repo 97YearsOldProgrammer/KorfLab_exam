@@ -8,10 +8,10 @@ parser = argparse.ArgumentParser(description='PWM for Kozak sequence.')
 parser.add_argument('file', type=str, help='name of genebank file')
 arg = parser.parse_args()
 
-# collecting CDS , trying to put into a 2dimensional matrix
+# Collecting CDS, trying to put into a 2-dimensional matrix
 
-CDS  = []                                           # this is where every genetic codon start
-rCDS = []                                           # complement start codon
+CDS = []    # This is where every genetic codon start
+rCDS = []   # Complement start codon
 
 with gzip.open(arg.file, 'rt') as fp:
     
@@ -21,36 +21,30 @@ with gzip.open(arg.file, 'rt') as fp:
     while True:
         
         line = fp.readline()
-        if not line: break
+        if not line:
+            break
         line = line.strip()
         
-        # this part is for collecting position of starting codon
+        # This part is for collecting position of starting codon
         if line.startswith('CDS'):
             
-            # used for collecting complement
-            if 'complement' in line: 
-                
-                if 'join' in line:
-                    rseq = line.split('join(')[-1].split('..')[1].split(',')[0].replace(')', '').strip()                
+            # Used for collecting complement
+            if 'complement' in line:
+                if 'join' in line: continue
                 else:
                     rseq = line.split('(')[-1].split('..')[1].replace(')', '').strip()
-                
                 rCDS.append(rseq)
-                                
-            elif  line.endswith('K'): continue     # there is one protein sequence ends with K
-            
-            elif  'join' in line:
-                rseq = line.split('join(')[-1].split('..')[0].split(',')[0] 
-                rCDS.append(rseq)
-                
+            # There is one protein sequence that ends with 'K'
+            elif line.endswith('K'):
+                continue     
+            elif 'join' in line: continue
             else:
                 seq = line[3:] 
-                i   = seq.index('.')   
-                seq = seq[3:i]       
-                seq = seq.lstrip()        		   # removing extra space bar before ouput
+                i = seq.index('.')
+                seq = seq[3:i]
+                seq = seq.lstrip()    # Removing extra space before output
                 CDS.append(seq)
-
-        # this is for collecting the DNA sequence        
+        # This is for collecting the DNA sequence        
         if 'ORIGIN' in line:
             condition = True  
             continue  
@@ -62,50 +56,49 @@ with gzip.open(arg.file, 'rt') as fp:
 
     full_seq = ''.join(sequence)
 
-# my counting format is dumb, have to turn it into uppercase
+# Converting to uppercase
 full_seq = full_seq.upper()
 
-kozakseq = []  # where the kozak sequence would be stored
-rkozakseq = [] # we extract first, and then do transcription to each sequence
+kozakseq = []   # Where the Kozak sequences will be stored
+rkozakseq = []  # We extract first, and then do transcription to each sequence
 
 for start_codon in CDS:
-    
-    kozak_seq = full_seq[ int(start_codon)-11: int(start_codon)+3 ]
+    kozak_seq = full_seq[int(start_codon) - 11: int(start_codon) + 3]
     kozakseq.append(kozak_seq)
     
 for start_codon in rCDS:
-    
-    kozak_seq = full_seq[ int(start_codon)-4 : int(start_codon)+10]
+    kozak_seq = full_seq[int(start_codon) - 4: int(start_codon) + 10]
     rkozakseq.append(kozak_seq)
 
-# transcription for reverse strand
+# Transcription for reverse strand
 
 for seq in rkozakseq:
     seq = tool.revercomp(seq)
     kozakseq.append(seq)
 
-# count how many times each letter exists
-# for existence of PWM
+# Count how many times each letter exists for PWM
 
-frequency = {}  # dictionary for counting PFW
+frequency = {}  # Dictionary for counting PWM
 
 a = 0
 
-d1 = {	'A': 0, 
-		'C': 0, 
-		'G': 0,
-		'T': 0 		}
+d1 = {
+    'A': 0,
+    'C': 0,
+    'G': 0,
+    'T': 0
+}
 
 for i in range(14):
-	a += 1
-	frequency[a] = d1.copy()    # i don't even know if we don't use copy, it would be the same dictionary
+    a += 1
+    frequency[a] = d1.copy()    # Using copy to avoid referencing the same dictionary
 
-# start counting
+# Start counting
 
 for seq in kozakseq:
     for n, base in enumerate(seq):
         if base in 'ACGT':
-            frequency[n+1][base] += 1
+            frequency[n + 1][base] += 1
 
-# final output
+# Final output
 print(json.dumps(frequency, indent=4))
